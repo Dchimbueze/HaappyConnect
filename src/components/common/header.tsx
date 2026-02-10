@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -9,7 +10,7 @@ import {
   LogOut,
   Settings,
   User,
-  Users,
+  UserPlus,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -22,9 +23,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
 export default function Header() {
-  const user = { name: 'Demo User', email: 'user@haappy.com' }; // Mock user
+  // Mock authentication state. In a real app, this would come from a context or hook.
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const user = { name: 'Demo User', email: 'user@haappy.com' };
+
+  // A simple way to toggle for demonstration
+  const toggleAuth = () => setIsAuthenticated(!isAuthenticated);
+
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-card">
@@ -38,8 +46,8 @@ export default function Header() {
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
-          <nav className="flex items-center space-x-1">
-            {user ? (
+          <nav className="flex items-center space-x-2">
+            {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -95,17 +103,31 @@ export default function Header() {
                     Support
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>
+                  <DropdownMenuItem onClick={toggleAuth}>
                     <LogOut />
                     Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button>
-                <LogIn />
-                Sign In
-              </Button>
+                <div className="flex items-center gap-2">
+                    <Button asChild variant="ghost">
+                        <Link href="/auth/login">
+                           <LogIn />
+                           Log In
+                        </Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/auth/signup">
+                           <UserPlus />
+                           Sign Up
+                        </Link>
+                    </Button>
+                     {/* The button below is for demo purposes to easily toggle auth state */}
+                    <Button onClick={toggleAuth} variant="outline" size="icon" className="h-9 w-9" title="Toggle Auth (Demo)">
+                       <User/>
+                    </Button>
+                </div>
             )}
           </nav>
         </div>
