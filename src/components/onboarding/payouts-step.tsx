@@ -30,9 +30,9 @@ export default function PayoutsStep({ onPrev }: PayoutsStepProps) {
 
         <div className="flex flex-col gap-4">
             <Button asChild size="lg" className="bg-accent hover:bg-accent/90">
-                <Link href="/">Connect with Stripe</Link>
+                <Link href="/browse">Connect with Stripe</Link>
             </Button>
-            <Link href="/">
+            <Link href="/browse">
                 <Button variant="ghost">I'll do this later</Button>
             </Link>
         </div>

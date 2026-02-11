@@ -55,7 +55,7 @@ export default function SignupPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Button asChild className="w-full">
-            <Link href="/onboarding">Create Account</Link>
+            <Link href="/">Create Account</Link>
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{' '}

@@ -51,7 +51,7 @@ export default function LoginPage() {
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Button asChild className="w-full">
-            <Link href="/">Login</Link>
+            <Link href="/browse">Login</Link>
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Don&apos;t have an account?{' '}

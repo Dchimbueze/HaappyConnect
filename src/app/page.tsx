@@ -1,68 +1,94 @@
-import { experts } from '@/lib/data';
-import ExpertCard from '@/components/expert-card';
-import AiMatcher from '@/components/ai-matcher';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Search } from 'lucide-react';
 
-export default function Home() {
-  const categories = [...new Set(experts.map((e) => e.category))];
+'use client';
+
+import { useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import RoleStep from '@/components/onboarding/role-step';
+import ProfileStep from '@/components/onboarding/profile-step';
+import CategoryStep from '@/components/onboarding/category-step';
+import VerificationStep from '@/components/onboarding/verification-step';
+import PayoutsStep from '@/components/onboarding/payouts-step';
+
+type UserRole = 'seeker' | 'expert' | null;
+
+export default function OnboardingPage() {
+  const [step, setStep] = useState(1);
+  const [role, setRole] = useState<UserRole>(null);
+
+  const expertSteps = [
+    { id: 1, name: 'Select Role' },
+    { id: 2, name: 'Profile Information' },
+    { id: 3, name: 'Expertise' },
+    { id: 4, name: 'Verification' },
+    { id: 5, name: 'Payouts' },
+  ];
+
+  const seekerSteps = [
+    { id: 1, name: 'Select Role' },
+    { id: 2, name: 'Profile Information' },
+  ];
+  
+  const steps = role === 'expert' ? expertSteps : seekerSteps;
+  const totalSteps = steps.length;
+
+  const nextStep = () => {
+    if (role === 'seeker' && step === 2) {
+        window.location.href = '/browse';
+        return;
+    }
+    setStep((s) => Math.min(s + 1, totalSteps))
+  };
+  const prevStep = () => setStep((s) => Math.max(s - 1, 1));
+  const selectRole = (selectedRole: UserRole) => {
+    setRole(selectedRole);
+    nextStep();
+  };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <section className="mb-12 rounded-xl bg-card p-8 shadow-sm">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-          <div className="flex flex-col justify-center">
-            <h1 className="font-headline text-4xl font-bold tracking-tight text-foreground md:text-5xl">
-              Connect with Your Ideal Expert
-            </h1>
-            <p className="mt-4 text-lg text-muted-foreground">
-              Describe your needs and let our AI find the perfect match for you
-              from our community of trusted professionals.
-            </p>
-          </div>
-          <AiMatcher />
-        </div>
-      </section>
-
-      <section>
-        <h2 className="font-headline text-3xl font-bold tracking-tight">
-          Browse Experts
-        </h2>
-        <div className="mt-6 mb-8 flex flex-col gap-4 sm:flex-row">
-          <div className="relative flex-grow">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              placeholder="Search by skill (e.g., React, Fundraising)"
-              className="pl-10"
-            />
-          </div>
-          <Select>
-            <SelectTrigger className="w-full sm:w-[200px]">
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
+    <div className="container mx-auto flex max-w-3xl flex-col items-center justify-center p-4 py-12">
+      <Card className="w-full">
+        <CardHeader>
+          <div className="mb-6">
+            <ol className="flex items-center w-full">
+              {steps.map((s, index) => (
+                <li
+                  key={s.id}
+                  className={cn(
+                    "flex w-full items-center",
+                    index < steps.length - 1 ? "after:content-[''] after:w-full after:h-1 after:border-b after:border-border after:border-4 after:inline-block" : "",
+                    index < step ? 'after:border-primary' : 'after:border-muted',
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "flex items-center justify-center w-10 h-10 rounded-full lg:h-12 lg:w-12 shrink-0",
+                      index < step ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    )}
+                  >
+                    {s.id}
+                  </span>
+                </li>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {experts.map((expert) => (
-            <ExpertCard key={expert.id} expert={expert} />
-          ))}
-        </div>
-      </section>
+            </ol>
+          </div>
+          <CardTitle className="text-3xl font-bold font-headline">{steps[step - 1].name}</CardTitle>
+          <CardDescription>Step {step} of {totalSteps}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {step === 1 && <RoleStep onSelectRole={selectRole} />}
+          {step === 2 && <ProfileStep onNext={nextStep} onPrev={prevStep} isExpert={role === 'expert'} />}
+          {role === 'expert' && step === 3 && <CategoryStep onNext={nextStep} onPrev={prevStep} />}
+          {role === 'expert' && step === 4 && <VerificationStep onNext={nextStep} onPrev={prevStep} />}
+          {role === 'expert' && step === 5 && <PayoutsStep onPrev={prevStep} />}
+        </CardContent>
+      </Card>
     </div>
   );
 }
