@@ -13,10 +13,11 @@ function initializeFirebase() {
   if (
     !firebaseConfig.apiKey ||
     !firebaseConfig.authDomain ||
-    !firebaseConfig.projectId
+    !firebaseConfig.projectId ||
+    firebaseConfig.apiKey.startsWith('REPLACE_WITH_YOUR_')
   ) {
     throw new Error(
-      'Firebase config is not set. Please update your .env.local file.'
+      'Firebase config is not set correctly. Please copy the values from your Firebase project settings into the .env.local file.'
     );
   }
 
