@@ -13,6 +13,7 @@ import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { type UserProfile } from '@/lib/types';
 
 async function socialSignIn(provider: GoogleAuthProvider | TwitterAuthProvider | OAuthProvider) {
   const { auth } = initializeFirebase();
@@ -60,7 +61,7 @@ async function createUserProfile(user: User) {
   if (!firestore) return;
 
   const userRef = doc(firestore, 'users', user.uid);
-  const userProfile = {
+  const userProfile: Partial<UserProfile> = {
     uid: user.uid,
     name: user.displayName,
     email: user.email,
@@ -76,5 +77,25 @@ async function createUserProfile(user: User) {
       requestResourceData: userProfile,
     });
     errorEmitter.emit('permission-error', permissionError);
+  });
+}
+
+export function updateUserProfile(uid: string, data: Partial<UserProfile>) {
+  const { firestore } = initializeFirebase();
+  if (!firestore) {
+    console.error("Firestore not initialized, cannot update user profile.");
+    return Promise.reject(new Error("Firestore not initialized"));
+  }
+
+  const userRef = doc(firestore, 'users', uid);
+
+  return setDoc(userRef, data, { merge: true }).catch(async (serverError) => {
+    const permissionError = new FirestorePermissionError({
+      path: userRef.path,
+      operation: 'update',
+      requestResourceData: data,
+    });
+    errorEmitter.emit('permission-error', permissionError);
+    throw serverError; // Re-throw to be handled by the caller
   });
 }

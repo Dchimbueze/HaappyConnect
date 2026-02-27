@@ -15,12 +15,16 @@ import ProfileStep from '@/components/onboarding/profile-step';
 import CategoryStep from '@/components/onboarding/category-step';
 import VerificationStep from '@/components/onboarding/verification-step';
 import PayoutsStep from '@/components/onboarding/payouts-step';
+import { useUser } from '@/firebase';
+import { updateUserProfile } from '@/firebase/auth/auth-service';
+import { Skeleton } from '@/components/ui/skeleton';
 
-type UserRole = 'seeker' | 'expert' | null;
+type UserRole = 'seeker' | 'expert' | 'dual' | null;
 
 export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<UserRole>(null);
+  const { user, loading } = useUser();
 
   const expertSteps = [
     { id: 1, name: 'Select Role' },
@@ -35,21 +39,43 @@ export default function OnboardingPage() {
     { id: 2, name: 'Profile Information' },
   ];
   
-  const steps = role === 'expert' ? expertSteps : seekerSteps;
+  const isExpertFlow = role === 'expert' || role === 'dual';
+  const steps = isExpertFlow ? expertSteps : seekerSteps;
   const totalSteps = steps.length;
 
   const nextStep = () => {
-    if (role === 'seeker' && step === 2) {
-        window.location.href = '/';
+    if (!isExpertFlow && step === 2) {
+        window.location.href = '/browse';
         return;
     }
-    setStep((s) => Math.min(s + 1, totalSteps))
+    setStep((s) => Math.min(s + 1, totalSteps));
   };
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
+  
   const selectRole = (selectedRole: UserRole) => {
+    if (user && selectedRole) {
+      updateUserProfile(user.uid, { role: selectedRole });
+    }
     setRole(selectedRole);
     nextStep();
   };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto flex max-w-3xl flex-col items-center justify-center p-4 py-12">
+        <Card className="w-full">
+          <CardHeader>
+            <Skeleton className="h-8 w-1/2 mb-6" />
+            <Skeleton className="h-10 w-1/3" />
+            <Skeleton className="h-4 w-1/4" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-48 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto flex max-w-3xl flex-col items-center justify-center p-4 py-12">
@@ -83,10 +109,10 @@ export default function OnboardingPage() {
         </CardHeader>
         <CardContent>
           {step === 1 && <RoleStep onSelectRole={selectRole} />}
-          {step === 2 && <ProfileStep onNext={nextStep} onPrev={prevStep} isExpert={role === 'expert'} />}
-          {role === 'expert' && step === 3 && <CategoryStep onNext={nextStep} onPrev={prevStep} />}
-          {role === 'expert' && step === 4 && <VerificationStep onNext={nextStep} onPrev={prevStep} />}
-          {role === 'expert' && step === 5 && <PayoutsStep onPrev={prevStep} />}
+          {step === 2 && <ProfileStep onNext={nextStep} onPrev={prevStep} isExpert={isExpertFlow} user={user} />}
+          {isExpertFlow && step === 3 && <CategoryStep onNext={nextStep} onPrev={prevStep} />}
+          {isExpertFlow && step === 4 && <VerificationStep onNext={nextStep} onPrev={prevStep} />}
+          {isExpertFlow && step === 5 && <PayoutsStep onPrev={prevStep} />}
         </CardContent>
       </Card>
     </div>

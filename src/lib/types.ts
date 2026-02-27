@@ -38,3 +38,13 @@ export type AIMatcherState = {
   error?: string;
   timestamp?: number;
 };
+
+export type UserProfile = {
+  uid: string;
+  name?: string | null;
+  email?: string | null;
+  photoURL?: string | null;
+  role?: 'seeker' | 'expert' | 'dual';
+  bio?: string;
+  title?: string;
+};
