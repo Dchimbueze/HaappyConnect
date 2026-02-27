@@ -14,6 +14,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ChromeIcon, Linkedin, Twitter } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import {
+  signInWithGoogle,
+  signInWithApple,
+  signInWithTwitter,
+  signInWithLinkedIn,
+} from '@/firebase/auth/auth-service';
+
 
 const AppleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg role="img" viewBox="0 0 24 24" {...props}>
@@ -25,6 +34,23 @@ const AppleIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleSocialSignUp = async (loginProvider: () => Promise<any>) => {
+    try {
+      await loginProvider();
+      router.push('/onboarding');
+    } catch (error: any) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Sign Up Failed",
+        description: error.message || "An unexpected error occurred. Please try again.",
+      });
+    }
+  };
+
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -36,10 +62,10 @@ export default function SignupPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-             <Button variant="outline"><ChromeIcon className="mr-2 h-4 w-4" /> Google</Button>
-             <Button variant="outline"><AppleIcon className="mr-2 h-4 w-4" /> Apple</Button>
-             <Button variant="outline"><Linkedin className="mr-2 h-4 w-4" /> LinkedIn</Button>
-             <Button variant="outline"><Twitter className="mr-2 h-4 w-4" /> X</Button>
+             <Button variant="outline" onClick={() => handleSocialSignUp(signInWithGoogle)}><ChromeIcon className="mr-2 h-4 w-4" /> Google</Button>
+             <Button variant="outline" onClick={() => handleSocialSignUp(signInWithApple)}><AppleIcon className="mr-2 h-4 w-4" /> Apple</Button>
+             <Button variant="outline" onClick={() => handleSocialSignUp(signInWithLinkedIn)}><Linkedin className="mr-2 h-4 w-4" /> LinkedIn</Button>
+             <Button variant="outline" onClick={() => handleSocialSignUp(signInWithTwitter)}><Twitter className="mr-2 h-4 w-4" /> X</Button>
           </div>
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -65,8 +91,8 @@ export default function SignupPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button asChild className="w-full">
-            <Link href="/onboarding">Create Account</Link>
+          <Button className="w-full" onClick={() => toast({ title: 'Coming Soon!', description: 'Email/Password signup will be implemented soon.' })}>
+            Create Account
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{' '}

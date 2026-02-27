@@ -24,16 +24,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useUser } from '@/firebase';
+import { signOutUser } from '@/firebase/auth/auth-service';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
-  // Mock authentication state. In a real app, this would come from a context or hook.
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const user = { name: 'Demo User', email: 'user@haappy.com' };
+  const { user, loading } = useUser();
+  const router = useRouter();
 
-  // A simple way to toggle for demonstration
-  const toggleAuth = () => setIsAuthenticated(!isAuthenticated);
+  const handleSignOut = async () => {
+    await signOutUser();
+    router.push('/');
+  };
 
+  const isAuthenticated = !!user;
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-card">
@@ -48,7 +53,10 @@ export default function Header() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
-            {isAuthenticated ? (
+            {loading && (
+              <Skeleton className="h-8 w-8 rounded-full" />
+            )}
+            {!loading && isAuthenticated && user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -56,16 +64,15 @@ export default function Header() {
                     className="relative h-8 w-8 rounded-full"
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src="https://picsum.photos/seed/100/40/40"
-                        alt={user.name}
+                      {user.photoURL && <AvatarImage
+                        src={user.photoURL}
+                        alt={user.displayName || 'User'}
                         data-ai-hint="user avatar"
-                      />
+                      />}
                       <AvatarFallback>
-                        {user.name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')}
+                        {user.displayName
+                          ? user.displayName.split(' ').map((n) => n[0]).join('')
+                          : 'U'}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -74,7 +81,7 @@ export default function Header() {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {user.name}
+                        {user.displayName}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
                         {user.email}
@@ -110,13 +117,13 @@ export default function Header() {
                     Support
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={toggleAuth}>
+                  <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut />
                     Log out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : (
+            ) : !loading && !isAuthenticated && (
                 <div className="flex items-center gap-2">
                     <Button asChild variant="ghost">
                         <Link href="/auth/login">
@@ -129,10 +136,6 @@ export default function Header() {
                            <UserPlus />
                            Sign Up
                         </Link>
-                    </Button>
-                     {/* The button below is for demo purposes to easily toggle auth state */}
-                    <Button onClick={toggleAuth} variant="outline" size="icon" className="h-9 w-9" title="Toggle Auth (Demo)">
-                       <User/>
                     </Button>
                 </div>
             )}
