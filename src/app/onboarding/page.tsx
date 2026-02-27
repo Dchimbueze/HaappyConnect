@@ -18,6 +18,7 @@ import PayoutsStep from '@/components/onboarding/payouts-step';
 import { useUser } from '@/firebase';
 import { updateUserProfile } from '@/firebase/auth/auth-service';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 type UserRole = 'seeker' | 'expert' | 'dual' | null;
 
@@ -25,6 +26,7 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(1);
   const [role, setRole] = useState<UserRole>(null);
   const { user, loading } = useUser();
+  const { toast } = useToast();
 
   const expertSteps = [
     { id: 1, name: 'Select Role' },
@@ -52,12 +54,27 @@ export default function OnboardingPage() {
   };
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
   
-  const selectRole = (selectedRole: UserRole) => {
+  const selectRole = async (selectedRole: UserRole) => {
     if (user && selectedRole) {
-      updateUserProfile(user.uid, { role: selectedRole });
+      try {
+        await updateUserProfile(user.uid, { role: selectedRole });
+        setRole(selectedRole);
+        nextStep();
+      } catch (error) {
+        console.error("Failed to update role:", error);
+        toast({
+          variant: "destructive",
+          title: "Update Failed",
+          description: "Could not save your selected role. Please try again.",
+        });
+      }
+    } else {
+        // This case should ideally not happen, but as a fallback,
+        // we'll optimistically update the UI. The next step will fail
+        // if the user is still not available.
+        setRole(selectedRole);
+        nextStep();
     }
-    setRole(selectedRole);
-    nextStep();
   };
 
   if (loading) {
