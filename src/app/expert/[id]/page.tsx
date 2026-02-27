@@ -1,3 +1,4 @@
+
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Star, MessageSquare, Video, Clock } from 'lucide-react';
@@ -48,8 +49,10 @@ export default function ExpertPage({ params }: { params: { id: string } }) {
               </div>
             </CardHeader>
             <CardContent className="text-center">
-                <Button size="lg" className="w-full mb-4">
-                  <MessageSquare className="mr-2 h-4 w-4" /> Start Chat
+                <Button asChild size="lg" className="w-full mb-4">
+                  <Link href={`/chat/${expert.id}`}>
+                    <MessageSquare className="mr-2 h-4 w-4" /> Start Chat
+                  </Link>
                 </Button>
                 <p className="flex items-center justify-center text-sm text-muted-foreground">
                   <Clock className="mr-2 h-4 w-4" />

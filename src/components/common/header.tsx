@@ -11,6 +11,7 @@ import {
   Settings,
   User,
   UserPlus,
+  Search,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -38,7 +39,7 @@ export default function Header() {
     <header className="sticky top-0 z-40 w-full border-b bg-card">
       <div className="container mx-auto flex h-16 items-center space-x-4 px-4 sm:justify-between sm:space-x-0">
         <div className="flex gap-6 md:gap-10">
-          <Link href="/browse" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2">
             <Briefcase className="h-6 w-6 text-primary" />
             <span className="font-headline text-2xl font-bold">
               HaappyConnect
@@ -82,6 +83,12 @@ export default function Header() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
+                    <Link href="/browse">
+                        <DropdownMenuItem>
+                            <Search />
+                            Browse Experts
+                        </DropdownMenuItem>
+                    </Link>
                     <Link href="/admin">
                       <DropdownMenuItem>
                         <LayoutDashboard />
