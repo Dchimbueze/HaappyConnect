@@ -42,7 +42,10 @@ export default function SignupPage() {
       await loginProvider();
       router.push('/onboarding');
     } catch (error: any) {
-      console.error(error);
+      // Don't show an error toast if the user closes the popup
+      if (error.code === 'auth/popup-closed-by-user') {
+        return;
+      }
       toast({
         variant: "destructive",
         title: "Sign Up Failed",

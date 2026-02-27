@@ -41,7 +41,10 @@ export default function LoginPage() {
       await loginProvider();
       router.push('/browse');
     } catch (error: any) {
-      console.error(error);
+      // Don't show an error toast if the user closes the popup
+      if (error.code === 'auth/popup-closed-by-user') {
+        return;
+      }
       toast({
         variant: "destructive",
         title: "Login Failed",

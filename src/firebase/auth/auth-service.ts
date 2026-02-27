@@ -22,9 +22,8 @@ async function socialSignIn(provider: GoogleAuthProvider | TwitterAuthProvider |
     await createUserProfile(result.user);
     return result.user;
   } catch (error) {
-    console.error("Authentication error:", error);
     // In a real app, you'd want to handle different error codes (e.g., popup closed, account exists)
-    // For now, we'll just re-throw.
+    // For now, we'll just re-throw and let the UI handle it.
     throw error;
   }
 }
