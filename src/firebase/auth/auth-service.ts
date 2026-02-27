@@ -22,8 +22,8 @@ async function socialSignIn(provider: GoogleAuthProvider | TwitterAuthProvider |
     await createUserProfile(result.user);
     return result.user;
   } catch (error) {
-    // In a real app, you'd want to handle different error codes (e.g., popup closed, account exists)
-    // For now, we'll just re-throw and let the UI handle it.
+    // The UI components that call this function will handle showing a toast.
+    // We just need to make sure the error propagates up.
     throw error;
   }
 }
@@ -57,7 +57,9 @@ export async function signOutUser() {
 
 async function createUserProfile(user: User) {
   const { firestore } = initializeFirebase();
-  if (!firestore) return;
+  if (!firestore) {
+    throw new Error("Firestore not initialized, cannot create user profile.");
+  }
 
   const userRef = doc(firestore, 'users', user.uid);
   const userProfile: Partial<UserProfile> = {
@@ -67,34 +69,40 @@ async function createUserProfile(user: User) {
     photoURL: user.photoURL,
   };
   
-  // Use setDoc with merge: true to create or update the document without overwriting existing fields
-  // like 'role', 'bio' which will be set during onboarding.
-  setDoc(userRef, userProfile, { merge: true }).catch(async (serverError) => {
+  try {
+    // Use setDoc with merge: true to create or update the document without overwriting existing fields
+    // like 'role', 'bio' which will be set during onboarding.
+    await setDoc(userRef, userProfile, { merge: true });
+  } catch (serverError) {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
       operation: 'write',
       requestResourceData: userProfile,
     });
     errorEmitter.emit('permission-error', permissionError);
-  });
+    // Re-throw the original error so the caller can handle it and show a toast.
+    throw serverError;
+  }
 }
 
-export function updateUserProfile(uid: string, data: Partial<UserProfile>) {
+export async function updateUserProfile(uid: string, data: Partial<UserProfile>) {
   const { firestore } = initializeFirebase();
   if (!firestore) {
-    console.error("Firestore not initialized, cannot update user profile.");
-    return Promise.reject(new Error("Firestore not initialized"));
+    throw new Error("Firestore not initialized, cannot update user profile.");
   }
 
   const userRef = doc(firestore, 'users', uid);
 
-  return setDoc(userRef, data, { merge: true }).catch(async (serverError) => {
+  try {
+    await setDoc(userRef, data, { merge: true });
+  } catch (serverError) {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
       operation: 'update',
       requestResourceData: data,
     });
     errorEmitter.emit('permission-error', permissionError);
-    throw serverError; // Re-throw to be handled by the caller
-  });
+    // Re-throw to be handled by the caller in the UI.
+    throw serverError;
+  }
 }
