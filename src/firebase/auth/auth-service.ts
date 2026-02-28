@@ -19,6 +19,9 @@ import { type UserProfile } from '@/lib/types';
 
 export async function signInWithGoogle() {
   const { auth } = initializeFirebase();
+  if (!auth) {
+    throw new Error('Firebase Auth is not initialized.');
+  }
   const provider = new GoogleAuthProvider();
   try {
     const result = await signInWithPopup(auth, provider);
@@ -34,6 +37,9 @@ export async function signInWithGoogle() {
     );
     console.error('Error Code:', error.code);
     console.error('Error Message:', error.message);
+    if (error.code === 'auth/popup-closed-by-user') {
+      throw new Error('The sign-in popup was closed before completing. If you are having trouble, please check your browser settings to ensure popups are enabled.');
+    }
     throw error;
   }
 }
@@ -44,6 +50,9 @@ export async function signUpWithEmailPassword(
   password: string
 ) {
   const { auth } = initializeFirebase();
+  if (!auth) {
+    throw new Error('Firebase Auth is not initialized.');
+  }
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);
     // Update the user's profile with their name
@@ -59,6 +68,9 @@ export async function signUpWithEmailPassword(
 
 export async function signInUserWithEmailPassword(email: string, password: string) {
     const { auth } = initializeFirebase();
+    if (!auth) {
+      throw new Error('Firebase Auth is not initialized.');
+    }
     try {
       const result = await firebaseSignInWithEmailAndPassword(auth, email, password);
       return result.user;
@@ -70,6 +82,9 @@ export async function signInUserWithEmailPassword(email: string, password: strin
 
 export async function signOutUser() {
   const { auth } = initializeFirebase();
+  if (!auth) {
+    throw new Error('Firebase Auth is not initialized.');
+  }
   await signOut(auth);
 }
 
