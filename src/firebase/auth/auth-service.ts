@@ -5,9 +5,10 @@ import {
   signInWithPopup,
   signOut,
   GoogleAuthProvider,
-  TwitterAuthProvider,
-  OAuthProvider,
   type User,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
@@ -15,7 +16,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { type UserProfile } from '@/lib/types';
 
-async function socialSignIn(provider: GoogleAuthProvider | TwitterAuthProvider | OAuthProvider) {
+async function socialSignIn(provider: GoogleAuthProvider) {
   const { auth } = initializeFirebase();
   try {
     const result = await signInWithPopup(auth, provider);
@@ -33,20 +34,28 @@ export async function signInWithGoogle() {
   return socialSignIn(provider);
 }
 
-export async function signInWithApple() {
-  const provider = new OAuthProvider('apple.com');
-  return socialSignIn(provider);
+export async function signUpWithEmailPassword(name: string, email: string, password: string) {
+    const { auth } = initializeFirebase();
+    try {
+      const result = await createUserWithEmailAndPassword(auth, email, password);
+      // Update the user's profile with their name
+      await updateProfile(result.user, { displayName: name });
+      // Create the user profile in Firestore
+      await createUserProfile(result.user);
+      return result.user;
+    } catch (error) {
+      throw error;
+    }
 }
 
-export async function signInWithTwitter() {
-  const provider = new TwitterAuthProvider();
-  return socialSignIn(provider);
-}
-
-export async function signInWithLinkedIn() {
-  // NOTE: LinkedIn via OAuthProvider may require custom parameters and advanced setup in Firebase console.
-  const provider = new OAuthProvider('linkedin.com');
-  return socialSignIn(provider);
+export async function signInWithEmailPassword(email: string, password: string) {
+    const { auth } = initializeFirebase();
+    try {
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      return result.user;
+    } catch (error) {
+      throw error;
+    }
 }
 
 
