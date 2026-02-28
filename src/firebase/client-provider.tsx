@@ -1,63 +1,82 @@
 'use client';
 
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { initializeFirebase } from '@/firebase/index';
 import { FirebaseProvider } from '@/firebase/provider';
 import { processGoogleRedirect } from '@/firebase/auth/auth-service';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from './auth/use-user';
 
+/**
+ * This component's sole responsibility is to check for a redirect result from Firebase Auth
+ * when the application first loads. It should only run once.
+ */
 function RedirectProcessor() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, loading } = useUser();
   const [isProcessing, setIsProcessing] = useState(true);
 
-  const process = useCallback(async () => {
-    // This function is now only called once when auth is no longer loading.
-    try {
-      const { user: redirectedUser, isNew, error } = await processGoogleRedirect();
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (redirectedUser) {
-        toast({
-          title: "Signed In",
-          description: `Welcome back, ${redirectedUser.displayName}!`,
-        });
-        if (isNew) {
-          router.push('/onboarding');
-        } else {
-          router.push('/browse');
+  useEffect(() => {
+    // This effect should only run once on initial component mount.
+    let isMounted = true;
+
+    async function handleRedirect() {
+      try {
+        const { user, isNew, error } = await processGoogleRedirect();
+
+        if (!isMounted) return;
+
+        if (error) {
+          // Let the UI handle specific errors if needed, but for now, we'll log them.
+          console.error("Redirect processing error:", error);
+          if (error.code !== 'auth/web-storage-unsupported' && error.code !== 'auth/operation-not-supported-in-this-environment') {
+            toast({
+              variant: "destructive",
+              title: "Sign In Failed",
+              description: "An unexpected error occurred during sign-in. Please try again.",
+            });
+          }
+          return;
+        }
+
+        if (user) {
+          toast({
+            title: "Signed In",
+            description: `Welcome back, ${user.displayName}!`,
+          });
+          // Redirect the user to the appropriate page.
+          if (isNew) {
+            router.push('/onboarding');
+          } else {
+            router.push('/browse');
+          }
+        }
+      } catch (e: any) {
+         if (isMounted) {
+            console.error("Unhandled exception during redirect processing:", e);
+             toast({
+              variant: "destructive",
+              title: "Sign In Failed",
+              description: e.message || "An unexpected error occurred.",
+            });
+         }
+      } finally {
+        if (isMounted) {
+          setIsProcessing(false);
         }
       }
-    } catch (error: any) {
-      // Avoid showing toasts for common non-errors during redirect checks.
-      if (error.code !== 'auth/web-storage-unsupported' && error.code !== 'auth/operation-not-supported-in-this-environment') {
-        toast({
-          variant: "destructive",
-          title: "Sign In Failed",
-          description: error.message || "An unexpected error occurred during sign-in.",
-        });
-      }
-    } finally {
-      setIsProcessing(false);
     }
+
+    handleRedirect();
+
+    return () => {
+      isMounted = false;
+    };
   }, [router, toast]);
 
-  useEffect(() => {
-    // When auth is loaded and we are not already logged in, process the redirect.
-    if (!loading && !user && isProcessing) {
-      process();
-    } else if (!loading && user) {
-        // If user is already logged in, no need to process.
-        setIsProcessing(false);
-    }
-  }, [loading, user, isProcessing, process]);
 
+  // While processing, we can render nothing or a global loader.
+  // For now, returning null is sufficient as the page behind will be visible.
   return null;
 }
 
