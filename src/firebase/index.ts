@@ -17,7 +17,7 @@ function initializeFirebase() {
     firebaseConfig.apiKey.startsWith('REPLACE_WITH_YOUR_')
   ) {
     throw new Error(
-      'Firebase config is not set correctly. Please copy the values from your Firebase project settings into the .env.local file.'
+      'CRITICAL: Your Firebase configuration is missing! You MUST copy your project keys into the src/firebase/config.ts file for the app to work.'
     );
   }
 
