@@ -13,53 +13,54 @@ export default function GoogleRedirectHandler() {
   const [processing, setProcessing] = useState(true);
 
   useEffect(() => {
-    // This effect should only run once, and only when auth is available.
+    console.log("GoogleRedirectHandler: useEffect triggered.");
     if (!auth) {
+      console.log("GoogleRedirectHandler: Auth service not available yet. Waiting.");
       // If auth is not ready, we wait. We should not set processing to false yet.
       return;
     }
 
     const processRedirect = async () => {
+      console.log("GoogleRedirectHandler: Starting to process redirect result.");
       try {
         const result = await getRedirectResult(auth);
         
         if (result) {
-          // A sign-in redirect just happened. We are now processing it.
-          // The `processing` state will keep the loader visible.
+          console.log("GoogleRedirectHandler: Redirect result found.", result);
           const additionalInfo = getAdditionalUserInfo(result);
           
           if (additionalInfo?.isNewUser) {
-            createUserProfile(result.user);
+            console.log("GoogleRedirectHandler: New user detected. Creating profile.");
+            await createUserProfile(result.user);
+            console.log("GoogleRedirectHandler: Profile created. Redirecting to /onboarding.");
             toast({
               title: 'Account Created',
               description: `Welcome, ${result.user.displayName}! Let's get you set up.`,
             });
-            // Use window.location.href for reliable redirection.
             window.location.href = '/onboarding';
           } else {
+            console.log("GoogleRedirectHandler: Existing user detected. Redirecting to /browse.");
             toast({
               title: 'Signed In',
               description: `Welcome back, ${result.user.displayName}!`,
             });
-             // Use window.location.href for reliable redirection.
             window.location.href = '/browse';
           }
           // We don't set processing to false because the page is about to navigate away.
         } else {
+          console.log("GoogleRedirectHandler: No redirect result. Normal page load.");
           // No redirect result. This is a normal page load.
           // We can stop showing the loader.
           setProcessing(false);
         }
       } catch (error: any) {
-        console.error('Google Sign-In Redirect Error:', error);
+        console.error('GoogleRedirectHandler: Error processing redirect.', error);
         toast({
           variant: 'destructive',
           title: 'Sign In Failed',
           description: error.message || 'An unexpected error occurred during sign-in.',
         });
         setProcessing(false);
-        // On error, send them back to login just in case.
-        window.location.href = '/auth/login';
       }
     };
 

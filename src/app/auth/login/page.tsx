@@ -28,15 +28,17 @@ export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleSocialLogin = async () => {
+    console.log("LoginPage: handleSocialLogin called.");
     setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
       // The user will be redirected to Google. If they return, the RedirectHandler will take over.
     } catch (error: any) {
+      console.error("LoginPage: Google Sign-In failed.", error);
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: "Could not initiate sign-in with Google. Please check your internet connection and try again.",
+        description: "Could not initiate sign-in with Google. Please try again.",
       });
       setIsGoogleLoading(false);
     }

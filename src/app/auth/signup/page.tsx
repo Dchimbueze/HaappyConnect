@@ -30,15 +30,17 @@ export default function SignupPage() {
   const [isEmailLoading, setIsEmailLoading] = useState(false);
 
   const handleSocialSignUp = async () => {
+    console.log("SignupPage: handleSocialSignUp called.");
     setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
       // The user will be redirected to Google. If they return, the RedirectHandler will take over.
     } catch (error: any) {
+      console.error("SignupPage: Google Sign-Up failed.", error);
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
-        description: "Could not initiate sign-up with Google. Please check your internet connection and try again.",
+        description: "Could not initiate sign-up with Google. Please try again.",
       });
       setIsGoogleLoading(false);
     }

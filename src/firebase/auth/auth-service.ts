@@ -19,14 +19,18 @@ import { type UserProfile } from '@/lib/types';
  * Initiates the Google sign-in process using a redirect.
  */
 export async function signInWithGoogle() {
+  console.log("auth-service: signInWithGoogle initiated.");
   const { auth } = initializeFirebase();
   if (!auth) {
+    console.error("auth-service: Firebase Auth is not initialized.");
     throw new Error('Firebase Auth is not initialized.');
   }
+  console.log("auth-service: Auth service obtained. Preparing for redirect.");
   const provider = new GoogleAuthProvider();
   // We use signInWithRedirect to avoid issues with popups being blocked.
   // The result of this is handled in the GoogleRedirectHandler component.
   await signInWithRedirect(auth, provider);
+  console.log("auth-service: signInWithRedirect has been called. User should be redirecting now.");
 }
 
 export async function signUpWithEmailPassword(
@@ -67,7 +71,7 @@ export async function signOutUser() {
  * Creates a user profile document in Firestore.
  * This is intended to be called for new users.
  */
-export function createUserProfile(
+export async function createUserProfile(
   user: User,
   customData: Partial<UserProfile> = {}
 ) {
@@ -87,21 +91,25 @@ export function createUserProfile(
     title: customData.title || '',
   };
 
-  setDoc(userRef, userProfile, { merge: true }).catch((serverError) => {
+  try {
+    await setDoc(userRef, userProfile, { merge: true });
+  } catch (serverError) {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
       operation: 'create',
       requestResourceData: userProfile,
     });
     errorEmitter.emit('permission-error', permissionError);
-  });
+    // Re-throw so the calling function can handle it
+    throw serverError;
+  }
 }
 
 
 /**
  * Updates an existing user profile document in Firestore.
  */
-export function updateUserProfile(
+export async function updateUserProfile(
   uid: string,
   data: Partial<UserProfile>
 ) {
@@ -112,12 +120,16 @@ export function updateUserProfile(
 
   const userRef = doc(firestore, 'users', uid);
 
-  setDoc(userRef, data, { merge: true }).catch((serverError) => {
+  try {
+    await setDoc(userRef, data, { merge: true });
+  } catch (serverError) {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
       operation: 'update',
       requestResourceData: data,
     });
     errorEmitter.emit('permission-error', permissionError);
-  });
+     // Re-throw so the calling function can handle it
+    throw serverError;
+  }
 }
