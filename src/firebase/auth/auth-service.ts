@@ -6,11 +6,10 @@ import {
   GoogleAuthProvider,
   type User,
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
+  signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
   updateProfile,
   getAdditionalUserInfo,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
@@ -22,7 +21,12 @@ export async function signInWithGoogle() {
   const { auth } = initializeFirebase();
   const provider = new GoogleAuthProvider();
   try {
-    await signInWithRedirect(auth, provider);
+    const result = await signInWithPopup(auth, provider);
+    const additionalInfo = getAdditionalUserInfo(result);
+    if (additionalInfo?.isNewUser) {
+      await createUserProfile(result.user);
+    }
+    return { user: result.user, isNew: additionalInfo?.isNewUser ?? false };
   } catch (error: any) {
     console.error(
       'GOOGLE SIGN-IN FAILED. This is the specific error from Firebase:',
@@ -31,34 +35,6 @@ export async function signInWithGoogle() {
     console.error('Error Code:', error.code);
     console.error('Error Message:', error.message);
     throw error;
-  }
-}
-
-export async function processGoogleRedirect() {
-  const { auth } = initializeFirebase();
-  try {
-    const result = await getRedirectResult(auth);
-    if (result) {
-      // This is the successfully signed-in user
-      const user = result.user;
-      const additionalInfo = getAdditionalUserInfo(result);
-      if (additionalInfo?.isNewUser) {
-        // If it's a new user, create a profile document
-        await createUserProfile(user);
-      }
-      return { user, isNew: additionalInfo?.isNewUser ?? false, error: null };
-    }
-    return { user: null, isNew: false, error: null };
-  } catch (error: any) {
-    // Avoid showing toasts for common non-errors during redirect checks.
-    if (
-      error.code !== 'auth/web-storage-unsupported' &&
-      error.code !== 'auth/operation-not-supported-in-this-environment'
-    ) {
-      console.error('GOOGLE REDIRECT SIGN-IN FAILED:', error);
-    }
-    // Pass the error back to the caller to be handled in the UI
-    return { user: null, isNew: false, error };
   }
 }
 
@@ -84,7 +60,7 @@ export async function signUpWithEmailPassword(
 export async function signInUserWithEmailPassword(email: string, password: string) {
     const { auth } = initializeFirebase();
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
+      const result = await firebaseSignInWithEmailAndPassword(auth, email, password);
       return result.user;
     } catch (error) {
       // Let the UI component handle showing the toast.
@@ -92,13 +68,12 @@ export async function signInUserWithEmailPassword(email: string, password: strin
     }
 }
 
-
 export async function signOutUser() {
   const { auth } = initializeFirebase();
   await signOut(auth);
 }
 
-async function createUserProfile(
+export async function createUserProfile(
   user: User,
   customData: Partial<UserProfile> = {}
 ) {

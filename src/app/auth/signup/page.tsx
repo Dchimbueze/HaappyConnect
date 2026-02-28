@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import {
   signInWithGoogle,
-  signUpWithEmailPassword
+  signUpWithEmailPassword,
 } from '@/firebase/auth/auth-service';
 
 export default function SignupPage() {
@@ -29,18 +29,35 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
 
   const handleSocialSignUp = async () => {
     setIsGoogleLoading(true);
     try {
-      // This will redirect the user. The result is handled globally.
-      await signInWithGoogle();
-    } catch (error: any) {
+      const { user, isNew } = await signInWithGoogle();
       toast({
-        variant: "destructive",
-        title: "Sign Up Failed",
-        description: error.message || "Could not initiate Google sign-up. Please try again.",
+        title: 'Signed In',
+        description: `Welcome, ${user.displayName}!`,
       });
+      if (isNew) {
+        router.push('/onboarding');
+      } else {
+        router.push('/browse');
+      }
+    } catch (error: any) {
+      let description = 'Could not sign in with Google. Please try again.';
+      if (error.code === 'auth/popup-closed-by-user') {
+        description = 'The sign-in popup was closed before completing. If you are having trouble, please check your browser settings to ensure popups are enabled.';
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        setIsGoogleLoading(false);
+        return;
+      }
+      toast({
+        variant: 'destructive',
+        title: 'Sign Up Failed',
+        description,
+      });
+    } finally {
       setIsGoogleLoading(false);
     }
   };
@@ -48,21 +65,25 @@ export default function SignupPage() {
   const handleEmailSignUp = async () => {
     if (!name || !email || !password) {
       toast({
-        variant: "destructive",
-        title: "Missing fields",
-        description: "Please fill out all fields.",
+        variant: 'destructive',
+        title: 'Missing fields',
+        description: 'Please fill out all fields to create an account.',
       });
       return;
     }
+    setIsEmailLoading(true);
     try {
       await signUpWithEmailPassword(name, email, password);
       router.push('/onboarding');
     } catch (error: any) {
       toast({
-        variant: "destructive",
-        title: "Sign Up Failed",
-        description: error.message || "An unexpected error occurred. Please try again.",
+        variant: 'destructive',
+        title: 'Sign Up Failed',
+        description:
+          error.message || 'An unexpected error occurred. Please try again.',
       });
+    } finally {
+      setIsEmailLoading(false);
     }
   };
 
@@ -72,19 +93,24 @@ export default function SignupPage() {
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
           <CardDescription>
-            Join HaappyConnect to find or offer expert advice.
+            Join HaappyConnect to find experts or offer your skills.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-             <Button variant="outline" className="w-full" onClick={handleSocialSignUp} disabled={isGoogleLoading}>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleSocialSignUp}
+              disabled={isGoogleLoading || isEmailLoading}
+            >
               {isGoogleLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <ChromeIcon className="mr-2 h-4 w-4" />
               )}
-               Continue with Google
-             </Button>
+              Continue with Google
+            </Button>
           </div>
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -92,23 +118,37 @@ export default function SignupPage() {
             </div>
             <div className="relative flex justify-center text-xs uppercase">
               <span className="bg-card px-2 text-muted-foreground">
-                Or continue with email
+                Or continue with
               </span>
             </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
-            <Input id="name" placeholder="John Doe" required value={name} onChange={(e) => setName(e.target.value)} />
+            <Input
+              id="name"
+              type="text"
+              placeholder="Jane Doe"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              id="email"
+              type="email"
+              placeholder="m@example.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </div>
           <div className="relative space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input 
-              id="password" 
-              type={showPassword ? 'text' : 'password'} 
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -120,14 +160,31 @@ export default function SignupPage() {
               className="absolute right-1 top-6 h-7 w-7 text-muted-foreground"
               onClick={() => setShowPassword(!showPassword)}
             >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+              <span className="sr-only">
+                {showPassword ? 'Hide password' : 'Show password'}
+              </span>
             </Button>
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button className="w-full" onClick={handleEmailSignUp}>
-            Create Account
+          <Button
+            className="w-full"
+            onClick={handleEmailSignUp}
+            disabled={isEmailLoading || isGoogleLoading}
+          >
+            {isEmailLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              'Create Account'
+            )}
           </Button>
           <p className="text-center text-sm text-muted-foreground">
             Already have an account?{' '}
@@ -135,7 +192,7 @@ export default function SignupPage() {
               href="/auth/login"
               className="font-semibold text-primary underline-offset-4 hover:underline"
             >
-              Login
+              Log in
             </Link>
           </p>
         </CardFooter>
