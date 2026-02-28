@@ -24,26 +24,30 @@ export default function GoogleRedirectHandler() {
         const result = await getRedirectResult(auth);
         
         if (result) {
-          // A sign-in redirect just happened.
+          // A sign-in redirect just happened. We are now processing it.
+          // The `processing` state will keep the loader visible.
           const additionalInfo = getAdditionalUserInfo(result);
           
           if (additionalInfo?.isNewUser) {
-            await createUserProfile(result.user);
+            createUserProfile(result.user);
             toast({
               title: 'Account Created',
               description: `Welcome, ${result.user.displayName}! Let's get you set up.`,
             });
+            // Use window.location.href for reliable redirection.
             window.location.href = '/onboarding';
           } else {
             toast({
               title: 'Signed In',
               description: `Welcome back, ${result.user.displayName}!`,
             });
+             // Use window.location.href for reliable redirection.
             window.location.href = '/browse';
           }
           // We don't set processing to false because the page is about to navigate away.
         } else {
           // No redirect result. This is a normal page load.
+          // We can stop showing the loader.
           setProcessing(false);
         }
       } catch (error: any) {
@@ -54,11 +58,13 @@ export default function GoogleRedirectHandler() {
           description: error.message || 'An unexpected error occurred during sign-in.',
         });
         setProcessing(false);
-        window.location.href = '/auth/login'; // On error, send them back to login.
+        // On error, send them back to login just in case.
+        window.location.href = '/auth/login';
       }
     };
 
     processRedirect();
+    // The dependency array ensures this runs only when `auth` is initialized.
   }, [auth, toast]);
 
   if (processing) {
@@ -72,5 +78,6 @@ export default function GoogleRedirectHandler() {
     );
   }
 
+  // Render nothing if not processing a redirect.
   return null;
 }

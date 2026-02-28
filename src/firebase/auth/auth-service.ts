@@ -1,28 +1,31 @@
 'use client';
 
 import {
-  getAuth,
-  signOut,
   GoogleAuthProvider,
-  type User,
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
-  updateProfile,
   signInWithRedirect,
+  signOut,
+  updateProfile,
+  signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
+  type User,
 } from 'firebase/auth';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { type UserProfile } from '@/lib/types';
 
+/**
+ * Initiates the Google sign-in process using a redirect.
+ */
 export async function signInWithGoogle() {
   const { auth } = initializeFirebase();
   if (!auth) {
     throw new Error('Firebase Auth is not initialized.');
   }
   const provider = new GoogleAuthProvider();
-  // Using signInWithRedirect instead of signInWithPopup to avoid cross-origin issues.
+  // We use signInWithRedirect to avoid issues with popups being blocked.
+  // The result of this is handled in the GoogleRedirectHandler component.
   await signInWithRedirect(auth, provider);
 }
 
@@ -35,14 +38,12 @@ export async function signUpWithEmailPassword(
   if (!auth) {
     throw new Error('Firebase Auth is not initialized.');
   }
-  try {
-    const result = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(result.user, { displayName: name });
-    await createUserProfile(result.user, { name });
-    return result.user;
-  } catch (error) {
-    throw error;
-  }
+  const result = await createUserWithEmailAndPassword(auth, email, password);
+  // Update the Firebase Auth profile
+  await updateProfile(result.user, { displayName: name });
+  // Create the user profile document in Firestore
+  await createUserProfile(result.user);
+  return result.user;
 }
 
 export async function signInUserWithEmailPassword(email: string, password: string) {
@@ -50,12 +51,7 @@ export async function signInUserWithEmailPassword(email: string, password: strin
     if (!auth) {
         throw new Error('Firebase Auth is not initialized.');
     }
-    try {
-      const result = await firebaseSignInWithEmailAndPassword(auth, email, password);
-      return result.user;
-    } catch (error) {
-      throw error;
-    }
+    return await firebaseSignInWithEmailAndPassword(auth, email, password);
 }
 
 export async function signOutUser() {
@@ -64,9 +60,14 @@ export async function signOutUser() {
     throw new Error('Firebase Auth is not initialized.');
   }
   await signOut(auth);
+  window.location.href = '/';
 }
 
-export async function createUserProfile(
+/**
+ * Creates a user profile document in Firestore.
+ * This is intended to be called for new users.
+ */
+export function createUserProfile(
   user: User,
   customData: Partial<UserProfile> = {}
 ) {
@@ -76,28 +77,31 @@ export async function createUserProfile(
   }
 
   const userRef = doc(firestore, 'users', user.uid);
-  const userProfile: Partial<UserProfile> = {
+  const userProfile: UserProfile = {
     uid: user.uid,
     name: customData.name || user.displayName,
     email: user.email,
     photoURL: user.photoURL,
-    ...customData,
+    role: customData.role || 'seeker', // Default role
+    bio: customData.bio || '',
+    title: customData.title || '',
   };
 
-  try {
-    await setDoc(userRef, userProfile, { merge: true });
-  } catch (serverError: any) {
+  setDoc(userRef, userProfile, { merge: true }).catch((serverError) => {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
-      operation: 'write',
+      operation: 'create',
       requestResourceData: userProfile,
     });
     errorEmitter.emit('permission-error', permissionError);
-    throw serverError;
-  }
+  });
 }
 
-export async function updateUserProfile(
+
+/**
+ * Updates an existing user profile document in Firestore.
+ */
+export function updateUserProfile(
   uid: string,
   data: Partial<UserProfile>
 ) {
@@ -108,15 +112,12 @@ export async function updateUserProfile(
 
   const userRef = doc(firestore, 'users', uid);
 
-  try {
-    await setDoc(userRef, data, { merge: true });
-  } catch (serverError: any) {
+  setDoc(userRef, data, { merge: true }).catch((serverError) => {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
       operation: 'update',
       requestResourceData: data,
     });
     errorEmitter.emit('permission-error', permissionError);
-    throw serverError;
-  }
+  });
 }
