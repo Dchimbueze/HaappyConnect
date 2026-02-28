@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -27,15 +26,13 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUser } from '@/firebase';
 import { signOutUser } from '@/firebase/auth/auth-service';
-import { useRouter } from 'next/navigation';
 
 export default function Header() {
   const { user, loading } = useUser();
-  const router = useRouter();
 
   const handleSignOut = async () => {
     await signOutUser();
-    router.push('/');
+    window.location.href = '/';
   };
 
   const isAuthenticated = !!user;
