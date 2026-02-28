@@ -51,13 +51,8 @@ export async function signInWithGoogle() {
     if (error.code === 'auth/operation-not-allowed') {
         console.error("ACTION: Ensure 'Google' is enabled as a Sign-in provider in the Firebase console and that your domain is authorized.");
     }
-     if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
-        // This is not a critical error, the user just closed the window.
-        // We will not show a toast for this, so we re-throw a specific error to be caught in the UI.
-        throw error;
-    }
-
-    // Re-throw the original error to be handled by the UI toast.
+    
+    // Re-throw the original error to be handled by the UI.
     throw error;
   }
 }

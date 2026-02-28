@@ -34,8 +34,12 @@ export default function SignupPage() {
       await loginProvider();
       router.push('/onboarding');
     } catch (error: any) {
-      // Don't show an error toast if the user closes the popup
-      if (error.code === 'auth/popup-closed-by-user') {
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        toast({
+            variant: "destructive",
+            title: "Sign-up window closed",
+            description: "If the window closed automatically, please ensure your app's domain is added to the 'Authorized domains' list in your Firebase Authentication settings.",
+          });
         return;
       }
       toast({
