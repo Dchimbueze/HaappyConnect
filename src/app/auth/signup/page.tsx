@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChromeIcon, Eye, EyeOff } from 'lucide-react';
+import { ChromeIcon, Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -28,25 +28,20 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  const handleSocialSignUp = async (loginProvider: () => Promise<any>) => {
+  const handleSocialSignUp = async () => {
+    setIsGoogleLoading(true);
     try {
-      await loginProvider();
-      router.push('/onboarding');
+      // This will redirect the user. The result is handled globally.
+      await signInWithGoogle();
     } catch (error: any) {
-      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-        toast({
-            variant: "destructive",
-            title: "Sign-up window closed",
-            description: "If the window closed automatically, please ensure your app's domain is added to the 'Authorized domains' list in your Firebase Authentication settings.",
-          });
-        return;
-      }
       toast({
         variant: "destructive",
         title: "Sign Up Failed",
-        description: error.message || "An unexpected error occurred. Please try again.",
+        description: error.message || "Could not initiate Google sign-up. Please try again.",
       });
+      setIsGoogleLoading(false);
     }
   };
 
@@ -82,7 +77,14 @@ export default function SignupPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-             <Button variant="outline" className="w-full" onClick={() => handleSocialSignUp(signInWithGoogle)}><ChromeIcon className="mr-2 h-4 w-4" /> Continue with Google</Button>
+             <Button variant="outline" className="w-full" onClick={handleSocialSignUp} disabled={isGoogleLoading}>
+              {isGoogleLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ChromeIcon className="mr-2 h-4 w-4" />
+              )}
+               Continue with Google
+             </Button>
           </div>
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
