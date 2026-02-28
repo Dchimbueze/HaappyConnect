@@ -3,14 +3,12 @@
 import { useEffect, useState } from 'react';
 import { getRedirectResult, getAdditionalUserInfo } from 'firebase/auth';
 import { useAuth } from '@/firebase';
-import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { createUserProfile } from '@/firebase/auth/auth-service';
 import { Loader2 } from 'lucide-react';
 
 export default function GoogleRedirectHandler() {
   const auth = useAuth();
-  const router = useRouter();
   const { toast } = useToast();
   const [processing, setProcessing] = useState(true);
 
@@ -35,13 +33,13 @@ export default function GoogleRedirectHandler() {
               title: 'Account Created',
               description: `Welcome, ${result.user.displayName}! Let's get you set up.`,
             });
-            router.push('/onboarding');
+            window.location.href = '/onboarding';
           } else {
             toast({
               title: 'Signed In',
               description: `Welcome back, ${result.user.displayName}!`,
             });
-            router.push('/browse');
+            window.location.href = '/browse';
           }
           // We don't set processing to false because the page is about to navigate away.
         } else {
@@ -56,12 +54,12 @@ export default function GoogleRedirectHandler() {
           description: error.message || 'An unexpected error occurred during sign-in.',
         });
         setProcessing(false);
-        router.push('/auth/login'); // On error, send them back to login.
+        window.location.href = '/auth/login'; // On error, send them back to login.
       }
     };
 
     processRedirect();
-  }, [auth, router, toast]);
+  }, [auth, toast]);
 
   if (processing) {
     return (

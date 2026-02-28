@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ChromeIcon, Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import {
   signInWithGoogle,
@@ -22,7 +21,6 @@ import {
 } from '@/firebase/auth/auth-service';
 
 export default function SignupPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -58,7 +56,7 @@ export default function SignupPage() {
     setIsEmailLoading(true);
     try {
       await signUpWithEmailPassword(name, email, password);
-      router.push('/onboarding');
+      window.location.href = '/onboarding';
     } catch (error: any) {
       toast({
         variant: 'destructive',
