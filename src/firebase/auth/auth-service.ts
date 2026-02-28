@@ -9,6 +9,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
+  getAdditionalUserInfo,
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
@@ -20,7 +21,11 @@ async function socialSignIn(provider: GoogleAuthProvider) {
   const { auth } = initializeFirebase();
   try {
     const result = await signInWithPopup(auth, provider);
-    await createUserProfile(result.user);
+    const additionalInfo = getAdditionalUserInfo(result);
+    // Only create a profile document if the user is new
+    if (additionalInfo?.isNewUser) {
+      await createUserProfile(result.user);
+    }
     return result.user;
   } catch (error) {
     // The UI components that call this function will handle showing a toast.
@@ -40,8 +45,8 @@ export async function signUpWithEmailPassword(name: string, email: string, passw
       const result = await createUserWithEmailAndPassword(auth, email, password);
       // Update the user's profile with their name
       await updateProfile(result.user, { displayName: name });
-      // Create the user profile in Firestore
-      await createUserProfile(result.user);
+      // Create the user profile in Firestore, passing the name explicitly
+      await createUserProfile(result.user, { name: name });
       return result.user;
     } catch (error) {
       throw error;
@@ -64,7 +69,7 @@ export async function signOutUser() {
   await signOut(auth);
 }
 
-async function createUserProfile(user: User) {
+async function createUserProfile(user: User, customData: Partial<UserProfile> = {}) {
   const { firestore } = initializeFirebase();
   if (!firestore) {
     throw new Error("Firestore not initialized, cannot create user profile.");
@@ -76,6 +81,7 @@ async function createUserProfile(user: User) {
     name: user.displayName,
     email: user.email,
     photoURL: user.photoURL,
+    ...customData,
   };
   
   try {
