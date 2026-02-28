@@ -6,7 +6,7 @@ import {
   GoogleAuthProvider,
   type User,
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword as firebaseSignInWithEmailPassword,
+  signInWithEmailAndPassword,
   updateProfile,
   getAdditionalUserInfo,
   signInWithRedirect,
@@ -81,10 +81,10 @@ export async function signUpWithEmailPassword(
   }
 }
 
-export async function signInWithEmailAndPassword(email: string, password: string) {
+export async function signInUserWithEmailPassword(email: string, password: string) {
     const { auth } = initializeFirebase();
     try {
-      const result = await firebaseSignInWithEmailPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(auth, email, password);
       return result.user;
     } catch (error) {
       // Let the UI component handle showing the toast.

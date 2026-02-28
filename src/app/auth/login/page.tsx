@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import {
   signInWithGoogle,
-  signInWithEmailPassword,
+  signInUserWithEmailPassword,
 } from '@/firebase/auth/auth-service';
 
 export default function LoginPage() {
@@ -37,9 +37,10 @@ export default function LoginPage() {
       await signInWithGoogle();
     } catch (error: any) {
       toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: error.message || "Could not initiate Google sign-in. Please try again.",
+        variant: 'destructive',
+        title: 'Login Failed',
+        description:
+          error.message || 'Could not initiate Google sign-in. Please try again.',
       });
       setIsGoogleLoading(false);
     }
@@ -55,7 +56,7 @@ export default function LoginPage() {
       return;
     }
     try {
-      await signInWithEmailPassword(email, password);
+      await signInUserWithEmailPassword(email, password);
       router.push('/browse');
     } catch (error: any) {
       toast({
