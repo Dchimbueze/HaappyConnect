@@ -28,7 +28,7 @@ async function socialSignIn(provider: GoogleAuthProvider) {
     }
     return result.user;
   } catch (error) {
-    // The UI components that call this function will handle showing a toast.
+    // The calling function will add more detailed logging.
     // We just need to make sure the error propagates up.
     throw error;
   }
@@ -36,7 +36,30 @@ async function socialSignIn(provider: GoogleAuthProvider) {
 
 export async function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
-  return socialSignIn(provider);
+  try {
+    return await socialSignIn(provider);
+  } catch (error: any) {
+    console.error(
+      "GOOGLE SIGN-IN FAILED. This is the specific error from Firebase:"
+    );
+    console.error("Error Code:", error.code);
+    console.error("Error Message:", error.message);
+    
+    // This error often means your .env.local file is not configured correctly
+    // OR the domain you are running the app on is not in the 'Authorized Domains' list
+    // in your Firebase project's Authentication settings.
+    if (error.code === 'auth/operation-not-allowed') {
+        console.error("ACTION: Ensure 'Google' is enabled as a Sign-in provider in the Firebase console and that your domain is authorized.");
+    }
+     if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+        // This is not a critical error, the user just closed the window.
+        // We will not show a toast for this, so we re-throw a specific error to be caught in the UI.
+        throw error;
+    }
+
+    // Re-throw the original error to be handled by the UI toast.
+    throw error;
+  }
 }
 
 export async function signUpWithEmailPassword(name: string, email: string, password: string) {
@@ -46,9 +69,10 @@ export async function signUpWithEmailPassword(name: string, email: string, passw
       // Update the user's profile with their name
       await updateProfile(result.user, { displayName: name });
       // Create the user profile in Firestore, passing the name explicitly
-      await createUserProfile(result.user, { name: name });
+      await createUserProfile(result.user, { name });
       return result.user;
     } catch (error) {
+      // Let the UI component handle showing the toast.
       throw error;
     }
 }
@@ -59,6 +83,7 @@ export async function signInWithEmailPassword(email: string, password: string) {
       const result = await signInWithEmailAndPassword(auth, email, password);
       return result.user;
     } catch (error) {
+      // Let the UI component handle showing the toast.
       throw error;
     }
 }
@@ -78,7 +103,7 @@ async function createUserProfile(user: User, customData: Partial<UserProfile> = 
   const userRef = doc(firestore, 'users', user.uid);
   const userProfile: Partial<UserProfile> = {
     uid: user.uid,
-    name: user.displayName,
+    name: customData.name || user.displayName,
     email: user.email,
     photoURL: user.photoURL,
     ...customData,
@@ -88,14 +113,14 @@ async function createUserProfile(user: User, customData: Partial<UserProfile> = 
     // Use setDoc with merge: true to create or update the document without overwriting existing fields
     // like 'role', 'bio' which will be set during onboarding.
     await setDoc(userRef, userProfile, { merge: true });
-  } catch (serverError) {
+  } catch(serverError: any) {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
       operation: 'write',
       requestResourceData: userProfile,
     });
     errorEmitter.emit('permission-error', permissionError);
-    // Re-throw the original error so the caller can handle it and show a toast.
+    // Re-throw the original error so the caller can handle it.
     throw serverError;
   }
 }
@@ -110,7 +135,7 @@ export async function updateUserProfile(uid: string, data: Partial<UserProfile>)
 
   try {
     await setDoc(userRef, data, { merge: true });
-  } catch (serverError) {
+  } catch (serverError: any) {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
       operation: 'update',
