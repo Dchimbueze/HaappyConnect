@@ -32,31 +32,14 @@ export default function LoginPage() {
   const handleSocialLogin = async () => {
     setIsGoogleLoading(true);
     try {
-      const { user, isNew } = await signInWithGoogle();
-      toast({
-        title: 'Signed In',
-        description: `Welcome back, ${user.displayName}!`,
-      });
-      if (isNew) {
-        router.push('/onboarding');
-      } else {
-        router.push('/browse');
-      }
+      await signInWithGoogle();
+      // The user will be redirected to Google. If they return, the RedirectHandler will take over.
     } catch (error: any) {
-      let description = 'Could not sign in with Google. Please try again.';
-       if (error.code === 'auth/popup-closed-by-user') {
-        description = 'The sign-in popup was closed before completing. If you are having trouble, please check your browser settings to ensure popups are enabled.';
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        // This is a common case, and we don't need to show an error for it.
-        setIsGoogleLoading(false);
-        return;
-      }
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description,
+        description: "Could not initiate sign-in with Google. Please check your internet connection and try again.",
       });
-    } finally {
       setIsGoogleLoading(false);
     }
   };

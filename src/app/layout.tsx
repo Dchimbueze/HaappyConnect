@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/common/header';
 import FirebaseClientProvider from '@/firebase/client-provider';
+import GoogleRedirectHandler from '@/components/auth/GoogleRedirectHandler';
 
 export const metadata: Metadata = {
   title: 'HaappyConnect',
@@ -31,6 +32,7 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <FirebaseClientProvider>
+          <GoogleRedirectHandler />
           <div className="relative flex min-h-screen flex-col">
             <Header />
             <main className="flex-1">{children}</main>

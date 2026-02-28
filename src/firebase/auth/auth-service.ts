@@ -8,8 +8,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
   updateProfile,
-  getAdditionalUserInfo,
-  signInWithPopup,
+  signInWithRedirect,
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
@@ -23,25 +22,8 @@ export async function signInWithGoogle() {
     throw new Error('Firebase Auth is not initialized.');
   }
   const provider = new GoogleAuthProvider();
-  try {
-    const result = await signInWithPopup(auth, provider);
-    const additionalInfo = getAdditionalUserInfo(result);
-    if (additionalInfo?.isNewUser) {
-      await createUserProfile(result.user);
-    }
-    return { user: result.user, isNew: additionalInfo?.isNewUser ?? false };
-  } catch (error: any) {
-    console.error(
-      'GOOGLE SIGN-IN FAILED. This is the specific error from Firebase:',
-      error
-    );
-    console.error('Error Code:', error.code);
-    console.error('Error Message:', error.message);
-    if (error.code === 'auth/popup-closed-by-user') {
-      throw new Error('The sign-in popup was closed before completing. If you are having trouble, please check your browser settings to ensure popups are enabled.');
-    }
-    throw error;
-  }
+  // Using signInWithRedirect instead of signInWithPopup to avoid cross-origin issues.
+  await signInWithRedirect(auth, provider);
 }
 
 export async function signUpWithEmailPassword(
@@ -55,13 +37,10 @@ export async function signUpWithEmailPassword(
   }
   try {
     const result = await createUserWithEmailAndPassword(auth, email, password);
-    // Update the user's profile with their name
     await updateProfile(result.user, { displayName: name });
-    // Create the user profile in Firestore, passing the name explicitly
     await createUserProfile(result.user, { name });
     return result.user;
   } catch (error) {
-    // Let the UI component handle showing the toast.
     throw error;
   }
 }
@@ -69,13 +48,12 @@ export async function signUpWithEmailPassword(
 export async function signInUserWithEmailPassword(email: string, password: string) {
     const { auth } = initializeFirebase();
     if (!auth) {
-      throw new Error('Firebase Auth is not initialized.');
+        throw new Error('Firebase Auth is not initialized.');
     }
     try {
       const result = await firebaseSignInWithEmailAndPassword(auth, email, password);
       return result.user;
     } catch (error) {
-      // Let the UI component handle showing the toast.
       throw error;
     }
 }
@@ -107,8 +85,6 @@ export async function createUserProfile(
   };
 
   try {
-    // Use setDoc with merge: true to create or update the document without overwriting existing fields
-    // like 'role', 'bio' which will be set during onboarding.
     await setDoc(userRef, userProfile, { merge: true });
   } catch (serverError: any) {
     const permissionError = new FirestorePermissionError({
@@ -117,7 +93,6 @@ export async function createUserProfile(
       requestResourceData: userProfile,
     });
     errorEmitter.emit('permission-error', permissionError);
-    // Re-throw the original error so the caller can handle it.
     throw serverError;
   }
 }
@@ -142,7 +117,6 @@ export async function updateUserProfile(
       requestResourceData: data,
     });
     errorEmitter.emit('permission-error', permissionError);
-    // Re-throw to be handled by the caller in the UI.
     throw serverError;
   }
 }

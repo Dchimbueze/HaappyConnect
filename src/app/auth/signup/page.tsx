@@ -34,30 +34,14 @@ export default function SignupPage() {
   const handleSocialSignUp = async () => {
     setIsGoogleLoading(true);
     try {
-      const { user, isNew } = await signInWithGoogle();
-      toast({
-        title: 'Signed In',
-        description: `Welcome, ${user.displayName}!`,
-      });
-      if (isNew) {
-        router.push('/onboarding');
-      } else {
-        router.push('/browse');
-      }
+      await signInWithGoogle();
+      // The user will be redirected to Google. If they return, the RedirectHandler will take over.
     } catch (error: any) {
-      let description = 'Could not sign in with Google. Please try again.';
-      if (error.code === 'auth/popup-closed-by-user') {
-        description = 'The sign-in popup was closed before completing. If you are having trouble, please check your browser settings to ensure popups are enabled.';
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        setIsGoogleLoading(false);
-        return;
-      }
       toast({
         variant: 'destructive',
         title: 'Sign Up Failed',
-        description,
+        description: "Could not initiate sign-up with Google. Please check your internet connection and try again.",
       });
-    } finally {
       setIsGoogleLoading(false);
     }
   };
