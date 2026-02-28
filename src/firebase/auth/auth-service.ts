@@ -2,12 +2,14 @@
 
 import {
   getAuth,
-  signInWithPopup,
   signOut,
   GoogleAuthProvider,
-  TwitterAuthProvider,
-  OAuthProvider,
   type User,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
+  updateProfile,
+  getAdditionalUserInfo,
+  signInWithPopup,
 } from 'firebase/auth';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
@@ -15,86 +17,132 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { type UserProfile } from '@/lib/types';
 
-async function socialSignIn(provider: GoogleAuthProvider | TwitterAuthProvider | OAuthProvider) {
+export async function signInWithGoogle() {
   const { auth } = initializeFirebase();
+  if (!auth) {
+    throw new Error('Firebase Auth is not initialized.');
+  }
+  const provider = new GoogleAuthProvider();
   try {
     const result = await signInWithPopup(auth, provider);
-    await createUserProfile(result.user);
-    return result.user;
-  } catch (error) {
-    // In a real app, you'd want to handle different error codes (e.g., popup closed, account exists)
-    // For now, we'll just re-throw and let the UI handle it.
+    const additionalInfo = getAdditionalUserInfo(result);
+    if (additionalInfo?.isNewUser) {
+      await createUserProfile(result.user);
+    }
+    return { user: result.user, isNew: additionalInfo?.isNewUser ?? false };
+  } catch (error: any) {
+    console.error(
+      'GOOGLE SIGN-IN FAILED. This is the specific error from Firebase:',
+      error
+    );
+    console.error('Error Code:', error.code);
+    console.error('Error Message:', error.message);
+    if (error.code === 'auth/popup-closed-by-user') {
+      throw new Error('The sign-in popup was closed before completing. If you are having trouble, please check your browser settings to ensure popups are enabled.');
+    }
     throw error;
   }
 }
 
-export async function signInWithGoogle() {
-  const provider = new GoogleAuthProvider();
-  return socialSignIn(provider);
+export async function signUpWithEmailPassword(
+  name: string,
+  email: string,
+  password: string
+) {
+  const { auth } = initializeFirebase();
+  if (!auth) {
+    throw new Error('Firebase Auth is not initialized.');
+  }
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
+    // Update the user's profile with their name
+    await updateProfile(result.user, { displayName: name });
+    // Create the user profile in Firestore, passing the name explicitly
+    await createUserProfile(result.user, { name });
+    return result.user;
+  } catch (error) {
+    // Let the UI component handle showing the toast.
+    throw error;
+  }
 }
 
-export async function signInWithApple() {
-  const provider = new OAuthProvider('apple.com');
-  return socialSignIn(provider);
+export async function signInUserWithEmailPassword(email: string, password: string) {
+    const { auth } = initializeFirebase();
+    if (!auth) {
+      throw new Error('Firebase Auth is not initialized.');
+    }
+    try {
+      const result = await firebaseSignInWithEmailAndPassword(auth, email, password);
+      return result.user;
+    } catch (error) {
+      // Let the UI component handle showing the toast.
+      throw error;
+    }
 }
-
-export async function signInWithTwitter() {
-  const provider = new TwitterAuthProvider();
-  return socialSignIn(provider);
-}
-
-export async function signInWithLinkedIn() {
-  // NOTE: LinkedIn via OAuthProvider may require custom parameters and advanced setup in Firebase console.
-  const provider = new OAuthProvider('linkedin.com');
-  return socialSignIn(provider);
-}
-
 
 export async function signOutUser() {
   const { auth } = initializeFirebase();
+  if (!auth) {
+    throw new Error('Firebase Auth is not initialized.');
+  }
   await signOut(auth);
 }
 
-async function createUserProfile(user: User) {
+export async function createUserProfile(
+  user: User,
+  customData: Partial<UserProfile> = {}
+) {
   const { firestore } = initializeFirebase();
-  if (!firestore) return;
+  if (!firestore) {
+    throw new Error('Firestore not initialized, cannot create user profile.');
+  }
 
   const userRef = doc(firestore, 'users', user.uid);
   const userProfile: Partial<UserProfile> = {
     uid: user.uid,
-    name: user.displayName,
+    name: customData.name || user.displayName,
     email: user.email,
     photoURL: user.photoURL,
+    ...customData,
   };
-  
-  // Use setDoc with merge: true to create or update the document without overwriting existing fields
-  // like 'role', 'bio' which will be set during onboarding.
-  setDoc(userRef, userProfile, { merge: true }).catch(async (serverError) => {
+
+  try {
+    // Use setDoc with merge: true to create or update the document without overwriting existing fields
+    // like 'role', 'bio' which will be set during onboarding.
+    await setDoc(userRef, userProfile, { merge: true });
+  } catch (serverError: any) {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
       operation: 'write',
       requestResourceData: userProfile,
     });
     errorEmitter.emit('permission-error', permissionError);
-  });
+    // Re-throw the original error so the caller can handle it.
+    throw serverError;
+  }
 }
 
-export function updateUserProfile(uid: string, data: Partial<UserProfile>) {
+export async function updateUserProfile(
+  uid: string,
+  data: Partial<UserProfile>
+) {
   const { firestore } = initializeFirebase();
   if (!firestore) {
-    console.error("Firestore not initialized, cannot update user profile.");
-    return Promise.reject(new Error("Firestore not initialized"));
+    throw new Error('Firestore not initialized, cannot update user profile.');
   }
 
   const userRef = doc(firestore, 'users', uid);
 
-  return setDoc(userRef, data, { merge: true }).catch(async (serverError) => {
+  try {
+    await setDoc(userRef, data, { merge: true });
+  } catch (serverError: any) {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
       operation: 'update',
       requestResourceData: data,
     });
     errorEmitter.emit('permission-error', permissionError);
-    throw serverError; // Re-throw to be handled by the caller
-  });
+    // Re-throw to be handled by the caller in the UI.
+    throw serverError;
+  }
 }
