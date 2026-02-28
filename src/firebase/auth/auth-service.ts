@@ -1,9 +1,7 @@
 'use client';
 
 import {
-  GoogleAuthProvider,
   createUserWithEmailAndPassword,
-  signInWithRedirect,
   signOut,
   updateProfile,
   signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
@@ -14,24 +12,6 @@ import { initializeFirebase } from '@/firebase';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { type UserProfile } from '@/lib/types';
-
-/**
- * Initiates the Google sign-in process using a redirect.
- */
-export async function signInWithGoogle() {
-  console.log("auth-service: signInWithGoogle initiated.");
-  const { auth } = initializeFirebase();
-  if (!auth) {
-    console.error("auth-service: Firebase Auth is not initialized.");
-    throw new Error('Firebase Auth is not initialized.');
-  }
-  console.log("auth-service: Auth service obtained. Preparing for redirect.");
-  const provider = new GoogleAuthProvider();
-  // We use signInWithRedirect to avoid issues with popups being blocked.
-  // The result of this is handled in the GoogleRedirectHandler component.
-  await signInWithRedirect(auth, provider);
-  console.log("auth-service: signInWithRedirect has been called. User should be redirecting now.");
-}
 
 export async function signUpWithEmailPassword(
   name: string,

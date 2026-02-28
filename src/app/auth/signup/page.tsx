@@ -12,11 +12,10 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChromeIcon, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import {
-  signInWithGoogle,
   signUpWithEmailPassword,
 } from '@/firebase/auth/auth-service';
 
@@ -26,25 +25,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
-
-  const handleSocialSignUp = async () => {
-    console.log("SignupPage: handleSocialSignUp called.");
-    setIsGoogleLoading(true);
-    try {
-      await signInWithGoogle();
-      // The user will be redirected to Google. If they return, the RedirectHandler will take over.
-    } catch (error: any) {
-      console.error("SignupPage: Google Sign-Up failed.", error);
-      toast({
-        variant: 'destructive',
-        title: 'Sign Up Failed',
-        description: "Could not initiate sign-up with Google. Please try again.",
-      });
-      setIsGoogleLoading(false);
-    }
-  };
 
   const handleEmailSignUp = async () => {
     if (!name || !email || !password) {
@@ -81,31 +62,6 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleSocialSignUp}
-              disabled={isGoogleLoading || isEmailLoading}
-            >
-              {isGoogleLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <ChromeIcon className="mr-2 h-4 w-4" />
-              )}
-              Continue with Google
-            </Button>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
           <div className="space-y-2">
             <Label htmlFor="name">Full Name</Label>
             <Input
@@ -159,7 +115,7 @@ export default function SignupPage() {
           <Button
             className="w-full"
             onClick={handleEmailSignUp}
-            disabled={isEmailLoading || isGoogleLoading}
+            disabled={isEmailLoading}
           >
             {isEmailLoading ? (
               <>

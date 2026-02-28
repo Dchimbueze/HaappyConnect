@@ -41,7 +41,7 @@
     }
   },
   "auth": {
-    "providers": ["google", "password"]
+    "providers": ["password"]
   },
   "firestore": {
     "/users/{userId}": {
