@@ -32,7 +32,6 @@ export default function Header() {
 
   const handleSignOut = async () => {
     await signOutUser();
-    window.location.href = '/';
   };
 
   const isAuthenticated = !!user;
@@ -44,7 +43,7 @@ export default function Header() {
           <Link href="/" className="flex items-center space-x-2">
             <Briefcase className="h-6 w-6 text-primary" />
             <span className="font-headline text-2xl font-bold">
-              HaappyConnect
+              HappyConnect
             </span>
           </Link>
         </div>
@@ -87,36 +86,38 @@ export default function Header() {
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuGroup>
-                    <Link href="/browse">
+                    <Link href="/browse" passHref>
                         <DropdownMenuItem>
                             <Search />
-                            Browse Experts
+                            <span>Browse Experts</span>
                         </DropdownMenuItem>
                     </Link>
-                    <Link href="/admin">
+                    <Link href="/admin" passHref>
                       <DropdownMenuItem>
                         <LayoutDashboard />
-                        Admin Dashboard
+                        <span>Admin Dashboard</span>
+                      </DropdownMenuItem>
+                    </Link>
+                    <Link href="/profile" passHref>
+                      <DropdownMenuItem>
+                        <User />
+                        <span>Profile</span>
                       </DropdownMenuItem>
                     </Link>
                     <DropdownMenuItem>
-                      <User />
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
                       <Settings />
-                      Settings
+                      <span>Settings</span>
                     </DropdownMenuItem>
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem>
                     <LifeBuoy />
-                    Support
+                    <span>Support</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut />
-                    Log out
+                    <span>Log out</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

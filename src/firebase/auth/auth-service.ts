@@ -1,13 +1,13 @@
 'use client';
 
 import {
-  GoogleAuthProvider,
   createUserWithEmailAndPassword,
-  signInWithRedirect,
   signOut,
   updateProfile,
   signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
   type User,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
@@ -15,18 +15,23 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { type UserProfile } from '@/lib/types';
 
-/**
- * Initiates the Google sign-in process using a redirect.
- */
 export async function signInWithGoogle() {
   const { auth } = initializeFirebase();
   if (!auth) {
     throw new Error('Firebase Auth is not initialized.');
   }
   const provider = new GoogleAuthProvider();
-  // We use signInWithRedirect to avoid issues with popups being blocked.
-  // The result of this is handled in the GoogleRedirectHandler component.
-  await signInWithRedirect(auth, provider);
+  try {
+    const result = await signInWithPopup(auth, provider);
+    await createUserProfile(result.user);
+    window.location.href = '/browse';
+  } catch (error: any) {
+    console.error('GOOGLE SIGN-IN FAILED. This is the specific error from Firebase:');
+    console.error('Error Code:', error.code);
+    console.error('Error Message:', error.message);
+    // Re-throw the error to be handled by the calling component
+    throw error;
+  }
 }
 
 export async function signUpWithEmailPassword(
@@ -43,7 +48,7 @@ export async function signUpWithEmailPassword(
   await updateProfile(result.user, { displayName: name });
   // Create the user profile document in Firestore
   await createUserProfile(result.user);
-  return result.user;
+  window.location.href = '/browse';
 }
 
 export async function signInUserWithEmailPassword(email: string, password: string) {
@@ -51,7 +56,8 @@ export async function signInUserWithEmailPassword(email: string, password: strin
     if (!auth) {
         throw new Error('Firebase Auth is not initialized.');
     }
-    return await firebaseSignInWithEmailAndPassword(auth, email, password);
+    await firebaseSignInWithEmailAndPassword(auth, email, password);
+    window.location.href = '/browse';
 }
 
 export async function signOutUser() {
@@ -64,10 +70,10 @@ export async function signOutUser() {
 }
 
 /**
- * Creates a user profile document in Firestore.
- * This is intended to be called for new users.
+ * Creates or updates a user profile document in Firestore.
+ * This is intended to be called for new users or after a social sign-in.
  */
-export function createUserProfile(
+export async function createUserProfile(
   user: User,
   customData: Partial<UserProfile> = {}
 ) {
@@ -87,21 +93,27 @@ export function createUserProfile(
     title: customData.title || '',
   };
 
-  setDoc(userRef, userProfile, { merge: true }).catch((serverError) => {
+  try {
+    // Use merge:true to create the doc or update it if it already exists.
+    // This is useful for social sign-ins where the user might already have a profile.
+    await setDoc(userRef, userProfile, { merge: true });
+  } catch (serverError) {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
-      operation: 'create',
+      operation: 'write',
       requestResourceData: userProfile,
     });
     errorEmitter.emit('permission-error', permissionError);
-  });
+    // Re-throw so the calling function can handle it
+    throw serverError;
+  }
 }
 
 
 /**
  * Updates an existing user profile document in Firestore.
  */
-export function updateUserProfile(
+export async function updateUserProfile(
   uid: string,
   data: Partial<UserProfile>
 ) {
@@ -112,12 +124,16 @@ export function updateUserProfile(
 
   const userRef = doc(firestore, 'users', uid);
 
-  setDoc(userRef, data, { merge: true }).catch((serverError) => {
+  try {
+    await setDoc(userRef, data, { merge: true });
+  } catch (serverError) {
     const permissionError = new FirestorePermissionError({
       path: userRef.path,
       operation: 'update',
       requestResourceData: data,
     });
     errorEmitter.emit('permission-error', permissionError);
-  });
+     // Re-throw so the calling function can handle it
+    throw serverError;
+  }
 }

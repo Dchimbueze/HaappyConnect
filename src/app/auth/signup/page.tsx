@@ -12,12 +12,12 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ChromeIcon, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Briefcase } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import {
-  signInWithGoogle,
   signUpWithEmailPassword,
+  signInWithGoogle
 } from '@/firebase/auth/auth-service';
 
 export default function SignupPage() {
@@ -26,23 +26,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
-
-  const handleSocialSignUp = async () => {
-    setIsGoogleLoading(true);
-    try {
-      await signInWithGoogle();
-      // The user will be redirected to Google. If they return, the RedirectHandler will take over.
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Sign Up Failed',
-        description: "Could not initiate sign-up with Google. Please check your internet connection and try again.",
-      });
-      setIsGoogleLoading(false);
-    }
-  };
 
   const handleEmailSignUp = async () => {
     if (!name || !email || !password) {
@@ -56,7 +40,6 @@ export default function SignupPage() {
     setIsEmailLoading(true);
     try {
       await signUpWithEmailPassword(name, email, password);
-      window.location.href = '/onboarding';
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -69,31 +52,43 @@ export default function SignupPage() {
     }
   };
 
+  const handleGoogleSignUp = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Sign Up Failed',
+        description:
+          error.code === 'auth/popup-closed-by-user'
+            ? 'The sign-up popup was closed before completing. Please try again.'
+            : error.message || 'An unexpected error occurred. Please try again.',
+      });
+    }
+  };
+
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
-          <CardDescription>
-            Join HaappyConnect to find experts or offer your skills.
-          </CardDescription>
+        <CardHeader className="space-y-2 text-center">
+            <Link href="/" className="flex items-center justify-center space-x-2">
+                <Briefcase className="h-7 w-7 text-primary" />
+                <span className="font-headline text-2xl font-bold">
+                HappyConnect
+                </span>
+            </Link>
+            <div className='!mt-4'>
+                <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
+                <CardDescription>
+                    Join HappyConnect to find experts or offer your skills.
+                </CardDescription>
+            </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleSocialSignUp}
-              disabled={isGoogleLoading || isEmailLoading}
-            >
-              {isGoogleLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <ChromeIcon className="mr-2 h-4 w-4" />
-              )}
-              Continue with Google
-            </Button>
-          </div>
+          <Button variant="outline" className="w-full" onClick={handleGoogleSignUp}>
+            <svg role="img" viewBox="0 0 24 24" className="mr-2 h-4 w-4"><path fill="currentColor" d="M21.543 9.75h-8.29v4.5h4.843c-.545 2.5-2.245 4.5-4.843 4.5-2.97 0-5.4-2.43-5.4-5.4s2.43-5.4 5.4-5.4c1.282 0 2.457.445 3.393 1.335l3.224-3.224C17.636 2.018 15.082 0 11.953 0 5.34 0 0 5.34 0 11.953s5.34 11.953 11.953 11.953c6.43 0 11.45-5.11 11.45-11.453 0-.756-.068-1.5-.192-2.25h-.668z"></path></svg>
+            Continue with Google
+          </Button>
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t" />
@@ -157,7 +152,7 @@ export default function SignupPage() {
           <Button
             className="w-full"
             onClick={handleEmailSignUp}
-            disabled={isEmailLoading || isGoogleLoading}
+            disabled={isEmailLoading}
           >
             {isEmailLoading ? (
               <>

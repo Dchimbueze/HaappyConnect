@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import { experts } from '@/lib/data';
 import ExpertCard from '@/components/expert-card';
 import AiMatcher from '@/components/ai-matcher';
@@ -12,7 +15,24 @@ import {
 import { Search } from 'lucide-react';
 
 export default function BrowsePage() {
-  const categories = [...new Set(experts.map((e) => e.category))];
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+
+  const categories = ['all', ...new Set(experts.map((e) => e.category))];
+
+  const filteredExperts = experts.filter((expert) => {
+    const matchesCategory =
+      selectedCategory === 'all' || expert.category === selectedCategory;
+    const matchesSearch =
+      searchTerm === '' ||
+      expert.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expert.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      expert.skills.some((skill) =>
+        skill.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    return matchesCategory && matchesSearch;
+  });
+
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -39,17 +59,19 @@ export default function BrowsePage() {
           <div className="relative flex-grow">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
-              placeholder="Search by skill (e.g., React, Fundraising)"
+              placeholder="Search by name, title, or skill..."
               className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Select>
+          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full sm:w-[200px]">
               <SelectValue placeholder="Filter by category" />
             </SelectTrigger>
             <SelectContent>
               {categories.map((category) => (
-                <SelectItem key={category} value={category}>
+                <SelectItem key={category} value={category} className="capitalize">
                   {category}
                 </SelectItem>
               ))}
@@ -58,10 +80,16 @@ export default function BrowsePage() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {experts.map((expert) => (
+          {filteredExperts.map((expert) => (
             <ExpertCard key={expert.id} expert={expert} />
           ))}
         </div>
+        {filteredExperts.length === 0 && (
+          <div className="col-span-full text-center py-16">
+            <p className="text-lg font-semibold">No experts found</p>
+            <p className="text-muted-foreground">Try adjusting your search or filter criteria.</p>
+          </div>
+        )}
       </section>
     </div>
   );
