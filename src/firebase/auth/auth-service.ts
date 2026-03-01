@@ -8,6 +8,7 @@ import {
   type User,
   GoogleAuthProvider,
   signInWithPopup,
+  getAdditionalUserInfo,
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase';
@@ -23,13 +24,22 @@ export async function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
   try {
     const result = await signInWithPopup(auth, provider);
+    const additionalInfo = getAdditionalUserInfo(result);
+
+    // This will create the doc if it doesn't exist, or merge if it does.
     await createUserProfile(result.user);
-    window.location.href = '/browse';
+
+    if (additionalInfo?.isNewUser) {
+      window.location.href = '/onboarding';
+    } else {
+      window.location.href = '/browse';
+    }
   } catch (error: any) {
-    console.error('GOOGLE SIGN-IN FAILED. This is the specific error from Firebase:');
-    console.error('Error Code:', error.code);
-    console.error('Error Message:', error.message);
-    // Re-throw the error to be handled by the calling component
+    console.error('GOOGLE SIGN-IN FAILED:', error.code, error.message);
+    if (error.code === 'auth/popup-closed-by-user') {
+      // Don't throw for this, as it's a common user action.
+      return;
+    }
     throw error;
   }
 }
@@ -48,7 +58,9 @@ export async function signUpWithEmailPassword(
   await updateProfile(result.user, { displayName: name });
   // Create the user profile document in Firestore
   await createUserProfile(result.user);
-  window.location.href = '/browse';
+  
+  // For new email sign-ups, always go to onboarding
+  window.location.href = '/onboarding';
 }
 
 export async function signInUserWithEmailPassword(email: string, password: string) {
