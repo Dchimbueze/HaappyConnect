@@ -39,7 +39,7 @@ export default function LandingPage() {
                 Connect with Experts.
               </h1>
               <p className="mb-6 max-w-2xl text-muted-foreground md:text-lg lg:mb-8 lg:text-xl">
-                HaappyConnect is a two-sided marketplace connecting advice-seekers with vetted experts for on-demand consultations.
+                HappyConnect is a two-sided marketplace connecting advice-seekers with vetted experts for on-demand consultations.
               </p>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                  <Button asChild size="lg">
@@ -56,12 +56,12 @@ export default function LandingPage() {
             </div>
             <div className="hidden lg:col-span-5 lg:mt-0 lg:flex">
               <Image
-                src="https://picsum.photos/seed/hero/500/500"
+                src="https://picsum.photos/seed/professionals/600/600"
                 alt="Happy people collaborating"
-                width={500}
-                height={500}
+                width={600}
+                height={600}
                 className="rounded-lg object-cover shadow-lg"
-                data-ai-hint="people collaborating"
+                data-ai-hint="professional people working"
               />
             </div>
           </div>
@@ -118,7 +118,7 @@ export default function LandingPage() {
           <div className="container mx-auto px-4 py-16 text-center">
             <h2 className="font-headline text-3xl font-bold">Ready to Get Started?</h2>
             <p className="mx-auto mt-4 max-w-2xl text-muted-foreground">
-              Join thousands of users who are accelerating their growth and sharing their knowledge on HaappyConnect.
+              Join thousands of users who are accelerating their growth and sharing their knowledge on HappyConnect.
             </p>
             <div className="mt-8 flex justify-center gap-4">
               <Button asChild size="lg">
@@ -132,7 +132,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="bg-muted/30 border-t">
         <div className="container mx-auto py-6 px-4 text-center text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} HaappyConnect. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} HappyConnect. All rights reserved.</p>
         </div>
       </footer>
     </div>

@@ -58,13 +58,13 @@ export default function SignupPage() {
             <Link href="/" className="flex items-center justify-center space-x-2">
                 <Briefcase className="h-7 w-7 text-primary" />
                 <span className="font-headline text-2xl font-bold">
-                HaappyConnect
+                HappyConnect
                 </span>
             </Link>
             <div className='!mt-4'>
                 <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
                 <CardDescription>
-                    Join HaappyConnect to find experts or offer your skills.
+                    Join HappyConnect to find experts or offer your skills.
                 </CardDescription>
             </div>
         </CardHeader>

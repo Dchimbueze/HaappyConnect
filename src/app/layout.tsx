@@ -6,7 +6,7 @@ import Header from '@/components/common/header';
 import FirebaseClientProvider from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  title: 'HaappyConnect',
+  title: 'HappyConnect',
   description:
     'A two-sided mobile marketplace connecting advice-seekers with experts.',
 };

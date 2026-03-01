@@ -52,7 +52,7 @@ export default function LoginPage() {
           <Link href="/" className="flex items-center justify-center space-x-2">
             <Briefcase className="h-7 w-7 text-primary" />
             <span className="font-headline text-2xl font-bold">
-              HaappyConnect
+              HappyConnect
             </span>
           </Link>
           <div className='!mt-4'>
